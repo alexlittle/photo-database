@@ -11,7 +11,7 @@ if($LOCID != ""){
 	if ($DATE != ""){
 		$mydate = strtotime($DATE);
 		$sql = "UPDATE photo SET photodate='".$mydate."' WHERE locid='".$LOCID."'";
-		if (!mysql_query($sql,$conn)){
+		if (!$conn->query($sql)){
   			echo "error in updating date: ".$sql. "<br/>";
   			return;
   		} else {

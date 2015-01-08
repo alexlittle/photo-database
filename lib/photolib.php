@@ -14,7 +14,6 @@
         if( $conn )
             return $conn;
         $conn = mysqli_connect( $CONFIG->DB_HOST, $CONFIG->DB_USER, $CONFIG->DB_PASS, $CONFIG->DB_NAME) or die('Could not connect to server.' );
-		mysql_query("SET NAMES utf8");
         return $conn;
     }
    
@@ -22,7 +21,7 @@
     {
         global $conn;
         if( $conn != false )
-            mysql_close($conn);
+            $conn->close();
         $conn = false;
     } 
     
@@ -56,7 +55,7 @@
 	  			//get id and update date
 	  			$ssql = sprintf("SELECT photoid from photo WHERE photofile='%s' and locid=%d",$file,$locid);
 	  			$res = $conn->query($sql);
-	  			while($o= mysql_fetch_object($res)){
+	  			while($o= mysqli_fetch_object($res)){
 	  				$usql = sprintf("UPDATE photo SET photodate='%s' WHERE photoid=%d",$exifdate,$o->photoid);
 	  				$conn->query($usql);
 	  				echo "updated date<br/>";
@@ -82,7 +81,7 @@
   		
   		foreach($tagsIdArray as $tagId){
   			$sql = "INSERT INTO phototag (photoid,tagid) VALUES (".$photoid.",".$tagId.")";
-	    	if (!mysql_query($sql,$conn)){
+	    	if (!$conn->query($sql)){
 	  			echo('Couldn\'t add tag: '.$tagId);
 	  		}
   		}
@@ -96,7 +95,7 @@
   		
   		foreach($tagsIdArray as $tagId){
   			$sql = "DELETE FROM phototag WHERE photoid=".$photoid." AND tagid=".$tagId;
-	    	if (!mysql_query($sql,$conn)){
+	    	if (!$conn->query($sql)){
 	  			echo('Couldn\'t remove tag: '.$tagId);
 	  		}
   		}
@@ -128,18 +127,18 @@
     		return $tagId;
     	}
     	$sql = "SELECT tagid FROM tag WHERE tagtext = '".$tag."'";
-    	$result = mysql_query($sql,$conn);
-  		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+    	$result = $conn->query($sql);
+  		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 		   	$tagId = $row['tagid'];
 		} 
 		if($tagId == 0){
 			$sql = "INSERT INTO tag (tagtext) VALUES ('".$tag."')";
-			if (!mysql_query($sql,$conn)){
+			if (!$conn->query($sql)){
   				die('Error: ' . mysql_error());
   			}
 			$sql = "SELECT MAX(tagid) AS newid FROM tag";
-			$result = mysql_query($sql,$conn);
-	  		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+			$result = $conn->query($sql);
+	  		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 			   	$tagId = $row['newid'];
 			}
 		}
@@ -152,8 +151,8 @@
 		INNER JOIN location l ON l.locid = p.locid
 		GROUP BY l.location,l.locid 		ORDER BY location DESC;";
     	$locArr = array();
-    	$result = mysql_query($sql,$conn);
-	  		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+    	$result =$conn->query($sql);
+	  		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 	  			$loc = arrayToObject($row);
 			   	array_push($locArr,$loc);
 			}
@@ -167,8 +166,8 @@
 		INNER JOIN location l ON l.locid = p.locid
 		WHERE l.locid = ".$loc." ORDER BY photofile ASC";
     	$picArr = array();
-    	$result = mysql_query($sql,$conn);
-  		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+    	$result = $conn->query($sql);
+  		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
   			$pic = arrayToObject($row);
   			$pic->tags = getTagsAsString($row['photoid']);
 		   	array_push($picArr,$pic);
@@ -180,8 +179,8 @@
     	global $conn;
     	$sql = "SELECT p.photoid, p.photofile,l.location AS photolocation,p.photodate,p.locid FROM photo p INNER JOIN location l ON l.locid = p.locid WHERE photoid = ".$id;
     	$pic = new stdClass();
-    	$result = mysql_query($sql,$conn);
-	  		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+    	$result = $conn->query($sql);
+	  		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 	  			$pic = arrayToObject($row);
 			}
     	
@@ -196,8 +195,8 @@
    		$tagstr = "";
     	$sql = "SELECT t.tagtext FROM phototag pt INNER JOIN tag t ON t.tagid = pt.tagid WHERE pt.photoid = ".$id;
     	$tagArr = array();
-    	$result = mysql_query($sql,$conn);
-	  		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+    	$result = $conn->query($sql);
+	  		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 				if($withlinks){
 					array_push($tagArr,'<a href="search.php?terms='.$row['tagtext'].'">'.$row['tagtext'].'</a>');
 				} else {
@@ -218,14 +217,14 @@
 				"locid = ".$locid.", ".
 				"photodate = ".$mydate.
 				" WHERE photoid =".$id;
-    	if (!mysql_query($sql,$conn)){
+    	if (!$conn->query($sql)){
   			echo "error updating";
   			return;
   		}
   		
   		//get the most recent photoid
   		$sql = "DELETE FROM phototag WHERE photoid =".$id;
-  		if (!mysql_query($sql,$conn)){
+  		if (!$conn->query($sql)){
   			echo "error updating";
   			return;
   		}
@@ -235,7 +234,7 @@
   		
   		foreach($tagsIdArray as $tagId){
   			$sql = "INSERT INTO phototag (photoid,tagid) VALUES (".$id.",".$tagId.")";
-	    	if (!mysql_query($sql,$conn)){
+	    	if (!$conn->query($sql)){
 	  			die('Error: ' . mysql_error());
 	  		}
   		}
@@ -251,8 +250,8 @@
     						INNER JOIN photoprops pp ON p.photoid = pp.photoid
 					    	ORDER By propint DESC");
     	$photos = array();
-    	$result = mysql_query($sql,$conn);
-    	while($o = mysql_fetch_object($result)){
+    	$result = $conn->query($sql);
+    	while($o = mysqli_fetch_object($result)){
     		array_push($photos,$o);
     	}
     	return $photos;
@@ -268,14 +267,8 @@
 						WHERE abs( r -%d ) + abs( g -%d ) + abs( b -%d ) = (
 						SELECT min( abs( r -%d ) + abs( g -%d ) + abs( b -%d ) ) AS compcolour
 						FROM colours ) ",$r,$g,$b,$r,$g,$b);
-    	/*$sql = sprintf("SELECT * FROM photoprops pp
-    						INNER JOIN photo p ON p.photoid = pp.photoid
-    						INNER JOIN location l ON l.locid = p.locid
-							WHERE propint = (SELECT %d-min(abs(%d-propint)) FROM photoprops)
-							OR propint =  (SELECT %d+min(abs(%d-propint)) FROM photoprops)
-							LIMIT 0,1",$colour,$colour,$colour,$colour);*/
-    	$result = mysql_query($sql,$conn);
-    	while($o = mysql_fetch_object($result)){
+    	$result = $conn->query($sql);
+    	while($o = mysqli_fetch_object($result)){
     		return $o;
     	}
     }
@@ -290,8 +283,8 @@
 						SELECT min( abs( r -%d ) + abs( g -%d ) + abs( b -%d )) AS compcolour
 						FROM colours WHERE photoid NOT IN (%s)) 
     					and p.photoid NOT IN (%s)",$r,$g,$b,$r,$g,$b,$used,$used);
-    	$result = mysql_query($sql,$conn);
-    	while($o = mysql_fetch_object($result)){
+    	$result = $conn->query($sql);
+    	while($o = mysqli_fetch_object($result)){
     		return $o;
     	}
     }
@@ -299,35 +292,35 @@
     function savePhotoProp($photoid, $propname, $propint=0, $propvalue=""){
     	global $conn;
     	$sql = sprintf("SELECT * FROM photoprops WHERE photoid=%d and propname='%s'",$photoid,$propname);
-    	$result = mysql_query($sql,$conn);
-    	while($row = mysql_fetch_object($result)){
+    	$result = $conn->query($sql);
+    	while($row = mysqli_fetch_object($result)){
     		//update
     		$updatesql = sprintf("UPDATE photoprops SET propint=%d, propvalue='%s' WHERE photoid=%d and propname='%s'",
     							$propint,$propvalue, $photoid, $propname);
-    		mysql_query($updatesql,$conn);
+    		$conn->query($updatesql);
     		return;
     	}
     	//else insert
     	$insertsql = sprintf("INSERT INTO photoprops (photoid,propname,propint,propvalue) VALUES (%d,'%s',%d,'%s')",
     		$photoid, $propname,$propint, $propvalue);
-    	mysql_query($insertsql,$conn);
+    	$conn->query($insertsql);
     }
     
     function savePhotoColour($photoid,$r,$g,$b,$alpha, $colourint){
     	global $conn;
     	$sql = sprintf("SELECT * FROM colours WHERE photoid=%d",$photoid);
-    	$result = mysql_query($sql,$conn);
-    	while($row = mysql_fetch_object($result)){
+    	$result = $conn->query($sql);
+    	while($row = mysqli_fetch_object($result)){
     		//update
     		$updatesql = sprintf("UPDATE colours SET r=%d,g=%d,b=%d,alpha=%d, colourint=%d WHERE photoid=%d",
     				$r,$g,$b,$alpha,$colourint, $photoid);
-    		mysql_query($updatesql,$conn);
+    		$conn->query($updatesql);
     		return;
     	}
     	//else insert
     	$insertsql = sprintf("INSERT INTO colours (photoid,r,g,b,alpha,colourint) VALUES (%d,%d,%d,%d,%d,%d)",
     			$photoid, $r,$g,$b,$alpha,$colourint);
-    	mysql_query($insertsql,$conn);
+    	$conn->query($insertsql);
     }
     
     function getCloud(){
@@ -338,8 +331,8 @@
                 //"HAVING count(*)>10 ".
 				"ORDER BY tagtext ASC";
     	$cloud = array();
-    	$result = mysql_query($sql,$conn);
-		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+    	$result = $conn->query($sql);
+		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 			$tag = arrayToObject($row);
 			array_push($cloud,$tag);
 		}
@@ -352,9 +345,9 @@
     			"(SELECT COUNT(*) AS tagcount , tagtext FROM phototag pt ".
     			"INNER JOIN tag t ON t.tagid = pt.tagid ".
 				"GROUP BY tagtext) temp";
-    	$result = mysql_query($sql,$conn);
+    	$result = $conn->query($sql);
     	$max = 0;
-  		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+  		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
   			$max = $row['maxcount'];
 		}
     	return $max;
@@ -384,8 +377,8 @@
 			HAVING COUNT(*) = ".count($tagIdArr)."
 			ORDER BY photodate ASC, photofile ASC";
 	$picArr = array();
-	$result = mysql_query($sql,$conn);
-	while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+	$result = $conn->query($sql);
+	while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 	    $pic = arrayToObject($row);
 	    $pic->tags = getTagsAsString($row['photoid'],true);
 	    array_push($picArr,$pic);
@@ -399,7 +392,7 @@ function deletePhoto($photoid){
 	global $conn;
 	// delete the tag references	
 	$sql = "DELETE FROM phototag WHERE photoid =".$photoid;
-  	if (!mysql_query($sql,$conn)){
+  	if (!$conn->query($sql)){
   		echo "...error deleting tags...";
   		return;
   	} else {
@@ -408,7 +401,7 @@ function deletePhoto($photoid){
   	
   	// delete the photo
 $sql = "DELETE FROM photo WHERE photoid =".$photoid;
-  	if (!mysql_query($sql,$conn)){
+  	if (!$conn->query($sql)){
   		echo "...error deleting photo...";
   		return;
   	}else {
@@ -439,18 +432,18 @@ function getLocId($loc){
     	return $locId;
     }
     $sql = "SELECT locid FROM location WHERE location = '".$loc."'";
-    $result = mysql_query($sql,$conn);
-  	while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+    $result = $conn->query($sql);
+  	while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 	   	$locId = $row['locid'];
 	} 
 	if($locId == 0){
 		$sql = "INSERT INTO location (location) VALUES ('".$loc."')";
-		if (!mysql_query($sql,$conn)){
+		if (!$conn->query($sql)){
   			die('Error: ' . mysql_error());
   		}
 		$sql = "SELECT MAX(locid) AS newid FROM location";
-		$result = mysql_query($sql,$conn);
-  		while($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+		$result = $conn->query($sql);
+  		while($row = mysqli_fetch_array($result, MYSQL_ASSOC)){
 		   	$locId = $row['newid'];
 		}
 	}
@@ -461,7 +454,7 @@ function updateDate($photoid,$date){
 	global $conn;
 	$mydate = strtotime($date);
 	$sql = "UPDATE photo SET photodate='".$mydate."' WHERE photoid='".$photoid."'";
-	if (!mysql_query($sql,$conn)){
+	if (!$conn->query($sql)){
   		echo "error in updating date: ".$sql. "<br/>";
   		return;
   	} else {
