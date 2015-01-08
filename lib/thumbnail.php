@@ -15,7 +15,7 @@
 	}
     $imagepath = $CONFIG->IMAGE_ROOT.$imagefile;
 
-    echo $imagepath;
+   
 	// create hash of file name
 	$hash = md5($imagefile.$newwidth.$newheight);
 	
@@ -50,12 +50,13 @@
     $image_resized = imagecreatetruecolor($new_width, $new_height);
     imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
 
+    echo "hello";
     // Display resized image
-    //header('Content-type: image/jpeg');
+    header('Content-type: image/jpeg');
     
     //write to file to cache for next time
     imagejpeg($image_resized,$tempdir.$hash);
-    //imagejpeg($image_resized);
+    imagejpeg($image_resized);
     die();
 
 ?> 
